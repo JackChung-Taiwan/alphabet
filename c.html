@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>C Words Picture Pronunciation</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      background: #f8fafc;
+      font-family: system-ui, "Noto Sans TC", sans-serif;
+    }
+
+    /* 圖片容器：只負責完整顯示圖片，不修改圖片外觀 */
+    .image-wrapper {
+      position: relative;
+      width: min(100vw, 1254px);
+      margin: 0 auto;
+    }
+
+    /* 主圖片：完整顯示，不裁切、不變形 */
+    .main-image {
+      display: block;
+      width: 100%;
+      height: auto;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    /* 透明點擊層 */
+    .click-layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    /* 透明點擊區：完全不可見 */
+    .word-hotspot {
+      position: absolute;
+      width: 10%;
+      height: 4%;
+      padding: 0;
+      margin: 0;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: transparent;
+      box-shadow: none;
+      appearance: none;
+      -webkit-appearance: none;
+      -webkit-tap-highlight-color: transparent;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+
+    .word-hotspot:hover,
+    .word-hotspot:focus,
+    .word-hotspot:focus-visible,
+    .word-hotspot:active {
+      border: none !important;
+      outline: none !important;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="min-h-screen flex items-center justify-center p-0 sm:p-4">
+    <div class="image-wrapper">
+
+      <!-- 主圖片：請勿修改圖片內容 -->
+      <img
+        src="c_words_grid.png"
+        alt="C Words 10x10 Vocabulary Grid"
+        class="main-image"
+      />
+
+      <!-- 100 個透明點擊區會自動產生在這裡 -->
+      <div id="clickLayer" class="click-layer"></div>
+
+    </div>
+  </main>
+
+  <script>
+    /*
+      ============================================================
+      發音模式設定
+      ============================================================
+
+      版本 A：Web Speech API TTS
+      const PRONUNCIATION_MODE = "tts";
+
+      版本 B：真人 MP3 音檔
+      const PRONUNCIATION_MODE = "mp3";
+
+      MP3 路徑範例：
+      audio/cat.mp3
+      audio/chili-pepper.mp3
+      audio/compact-disc.mp3
+    */
+
+    const PRONUNCIATION_MODE = "tts";
+    // const PRONUNCIATION_MODE = "mp3";
+
+    /*
+      ============================================================
+      100 個 C 開頭英文單字
+      順序：從左到右、從上到下
+      ============================================================
+    */
+    const WORDS = [
+      "cat", "car", "cake", "cup", "chair", "clock", "cloud", "crab", "crown", "candle",
+      "camel", "camera", "carrot", "castle", "chicken", "cheese", "cherry", "chest", "chimpanzee", "chili pepper",
+      "cactus", "canoe", "cap", "cape", "card", "carpet", "cart", "cave", "celery", "chain",
+      "chalk", "cheeseburger", "cheetah", "cherry pie", "chessboard", "chestnut", "chick", "chisel", "chocolate", "church",
+      "cinnamon", "clam", "clarinet", "claw", "clipboard", "clover", "clown", "coat", "coconut", "coffee",
+      "coin", "colander", "comb", "compass", "computer", "cookie", "coral", "corn", "couch", "cow",
+      "cowboy hat", "crabapple", "crane", "crayons", "croissant", "crow", "cucumber", "cupcake", "curtain", "cymbal",
+      "cabin", "cage", "calculator", "calendar", "canary", "candy", "can opener", "cannon", "carrot cake", "cash register",
+      "cassette", "cauliflower", "compact disc", "ceiling fan", "centipede", "cereal", "chain saw", "chalkboard", "chamomile", "chandelier",
+      "charger", "cheese grater", "cherries", "chess piece", "chili sauce", "chipmunk", "chive", "chopsticks", "cider", "citrus"
+    ];
+
+    let voices = [];
+    let selectedVoice = null;
+    let currentAudio = null;
+
+    /*
+      ============================================================
+      版本 A：Web Speech API TTS
+      - lang = en-US
+      - rate = 0.85
+      - 優先選擇 Google / Microsoft / en-US voice
+      - 點擊新單字時，先停止上一個聲音
+      ============================================================
+    */
+    function loadVoices() {
+      if (!("speechSynthesis" in window)) return;
+
+      voices = window.speechSynthesis.getVoices();
+
+      selectedVoice =
+        voices.find(voice =>
+          voice.lang === "en-US" &&
+          /google|microsoft|aria|jenny|samantha|natural|premium|enhanced/i.test(voice.name)
+        ) ||
+        voices.find(voice => voice.lang === "en-US") ||
+        voices.find(voice => voice.lang && voice.lang.startsWith("en")) ||
+        null;
+    }
+
+    if ("speechSynthesis" in window) {
+      loadVoices();
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+
+    function speakWithTTS(word) {
+      if (!("speechSynthesis" in window)) {
+        alert("這個瀏覽器不支援 Web Speech API。");
+        return;
+      }
+
+      stopAllSound();
+
+      const utterance = new SpeechSynthesisUtterance(word);
+      utterance.lang = "en-US";
+      utterance.rate = 0.85;
+      utterance.pitch = 1;
+      utterance.volume = 1;
+
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+      }
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+    /*
+      ============================================================
+      版本 B：真人 MP3 音檔
+      檔名規則：
+      cat             -> audio/cat.mp3
+      chili pepper    -> audio/chili-pepper.mp3
+      compact disc    -> audio/compact-disc.mp3
+      cash register   -> audio/cash-register.mp3
+
+      如果找不到 mp3，會自動改用 TTS 發音。
+      ============================================================
+    */
+    function speakWithMP3(word) {
+      stopAllSound();
+
+      const filename = createAudioFilename(word);
+      const audioPath = `audio/${filename}.mp3`;
+
+      currentAudio = new Audio(audioPath);
+      currentAudio.currentTime = 0;
+
+      currentAudio.play().catch(() => {
+        console.warn(`找不到音檔：${audioPath}，改用 TTS 發音。`);
+        speakWithTTS(word);
+      });
+    }
+
+    function createAudioFilename(word) {
+      return word
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+    }
+
+    function stopAllSound() {
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+        currentAudio = null;
+      }
+    }
+
+    function pronounce(word) {
+      if (PRONUNCIATION_MODE === "mp3") {
+        speakWithMP3(word);
+      } else {
+        speakWithTTS(word);
+      }
+    }
+
+    /*
+      ============================================================
+      建立 100 個透明點擊區
+
+      點擊區位置：
+      width = 10%
+      height = 4%
+      left = 欄位 × 10%
+      top = 列位 × 10% + 7%
+
+      只覆蓋每格下方英文單字位置。
+      ============================================================
+    */
+    function createHotspots() {
+      const clickLayer = document.getElementById("clickLayer");
+      clickLayer.innerHTML = "";
+
+      WORDS.forEach((word, index) => {
+        const row = Math.floor(index / 10);
+        const col = index % 10;
+
+        const button = document.createElement("button");
+
+        button.className = "word-hotspot";
+        button.type = "button";
+        button.setAttribute("aria-label", `Speak ${word}`);
+
+        button.style.left = `${col * 10}%`;
+        button.style.top = `${row * 10 + 7}%`;
+        button.style.width = "10%";
+        button.style.height = "4%";
+
+        button.addEventListener("click", () => {
+          pronounce(word);
+        });
+
+        clickLayer.appendChild(button);
+      });
+    }
+
+    createHotspots();
+  </script>
+</body>
+</html>

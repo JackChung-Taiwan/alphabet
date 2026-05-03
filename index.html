@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ABC Words Voice Cards</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, "Microsoft JhengHei", sans-serif;
+      background: #f5f7fb;
+      color: #222;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #ffcc33, #ff8a00);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.18);
+      z-index: 10;
+    }
+
+    .title {
+      font-size: 28px;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 1px 2px 4px rgba(0, 0, 0, 0.25);
+      white-space: nowrap;
+    }
+
+    .menu {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    button {
+      border: none;
+      cursor: pointer;
+      font-size: 22px;
+      font-weight: 800;
+      padding: 10px 22px;
+      border-radius: 999px;
+      background: #ffffff;
+      color: #333;
+      box-shadow: 0 4px 0 #d9d9d9;
+      transition: all 0.15s ease;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 0 #d9d9d9;
+      background: #fff7d6;
+    }
+
+    button.active {
+      background: #2f80ed;
+      color: #fff;
+      box-shadow: 0 4px 0 #1b5fba;
+    }
+
+    .viewer {
+      flex: 1;
+      width: 100%;
+      background: #ffffff;
+      position: relative;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: white;
+      display: block;
+    }
+
+    .hint {
+      font-size: 16px;
+      color: #fff;
+      opacity: 0.95;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 12px;
+      }
+
+      .title {
+        font-size: 22px;
+        text-align: center;
+      }
+
+      .hint {
+        text-align: center;
+        font-size: 14px;
+      }
+
+      .menu {
+        justify-content: center;
+      }
+
+      button {
+        font-size: 18px;
+        padding: 9px 18px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <header>
+      <div class="title">ABC Words Voice Cards</div>
+
+      <div class="menu">
+        <button id="btnA" class="active" onclick="loadPage('a.html', 'btnA')">A Words</button>
+        <button id="btnB" onclick="loadPage('b.html', 'btnB')">B Words</button>
+        <button id="btnC" onclick="loadPage('c.html', 'btnC')">C Words</button>
+      </div>
+
+      <div class="hint">Click the words to hear pronunciation 🔊</div>
+    </header>
+
+    <main class="viewer">
+      <iframe id="pageFrame" src="a.html"></iframe>
+    </main>
+  </div>
+
+  <script>
+    function loadPage(page, buttonId) {
+      const frame = document.getElementById("pageFrame");
+      frame.src = page;
+
+      const buttons = document.querySelectorAll("button");
+      buttons.forEach(btn => btn.classList.remove("active"));
+
+      document.getElementById(buttonId).classList.add("active");
+    }
+  </script>
+</body>
+</html>

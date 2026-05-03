@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+
+  <!-- 讓網頁可以在手機、平板、電腦自動適應畫面寬度 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>A Words TTS Grid</title>
+
+  <style>
+    /* =========================
+       1. 頁面基本設定
+       ========================= */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #f5f5f5;
+      width: 100%;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+    }
+
+    /* 讓內容置中顯示 */
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* 外層容器，限制最大寬度 */
+    .page {
+      width: 100%;
+      max-width: 1536px;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+
+    /* 上方提示文字 */
+    .hint {
+      text-align: center;
+      font-size: 20px;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    /* =========================
+       2. 圖片容器設定
+       ========================= */
+    .image-wrapper {
+      position: relative;
+
+      /* 讓圖片維持正方形比例 */
+      width: 100%;
+      aspect-ratio: 1 / 1;
+
+      background: white;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.15);
+    }
+
+    /* 圖片本身不做任何外觀修改 */
+    .image-wrapper img {
+      width: 100%;
+      height: 100%;
+      display: block;
+
+      /* 保持圖片完整顯示，不裁切 */
+      object-fit: contain;
+
+      /* 避免滑鼠拖曳圖片 */
+      user-select: none;
+
+      /* 讓滑鼠點擊穿透圖片，點到上方透明按鈕 */
+      pointer-events: none;
+    }
+
+    /* =========================
+       3. 英文單字透明點擊區
+       ========================= */
+    .word-button {
+      position: absolute;
+
+      /*
+        每個單字點擊區寬度為 10%
+        因為圖片是 10 欄，每欄剛好 10%
+      */
+      width: 10%;
+
+      /*
+        每個單字點擊區高度為 10%
+        只覆蓋每格下方英文單字區
+        不覆蓋上方圖片主體
+      */
+      height: 4%;
+
+      border: none;
+      outline: none;
+      background: transparent;
+
+      cursor: pointer;
+      padding: 0;
+      margin: 0;
+
+      /* 確保透明按鈕蓋在圖片上方 */
+      z-index: 10;
+    }
+
+    /*
+      關閉 hover 效果：
+      滑鼠移到單字上時，不顯示黃色背景、不顯示外框
+    */
+    .word-button:hover {
+      border: none;
+      outline: none;
+      background: transparent;
+    }
+
+    /*
+      關閉 active 效果：
+      點擊時，不顯示背景色、不顯示外框
+    */
+    .word-button:active {
+      border: none;
+      outline: none;
+      background: transparent;
+    }
+
+    /*
+      關閉 focus 效果：
+      點擊後或鍵盤選取時，不顯示黑線外框
+    */
+    .word-button:focus {
+      border: none;
+      outline: none;
+      background: transparent;
+    }
+
+    /*
+      有些瀏覽器會使用 focus-visible 顯示外框
+      這裡也一起關閉
+    */
+    .word-button:focus-visible {
+      border: none;
+      outline: none;
+      background: transparent;
+    }
+
+    /* 手機畫面時，提示文字稍微縮小 */
+    @media (max-width: 768px) {
+      .hint {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+
+    <!-- 頁面上方提示文字，可自行刪除或修改 -->
+    <div class="hint">Click the English word to hear it 🔊</div>
+
+    <!--
+      圖片容器：
+      請將圖片檔案放在 index.html 同一層資料夾
+      檔名必須是 a_words_grid.png
+    -->
+    <div class="image-wrapper" id="imageWrapper">
+      <img src="a_words_grid.png" alt="A words vocabulary grid" />
+    </div>
+
+  </div>
+
+  <script>
+    /* =========================
+       4. 單字資料
+       =========================
+       這裡的單字順序必須和圖片上的順序一樣：
+       從左到右、從上到下，共 10 欄 × 10 列 = 100 個單字
+    */
+    const words = [
+      "apple", "ant", "anchor", "avocado", "acorn", "axe", "apron", "airplane", "ambulance", "alarm clock",
+      "astronaut", "atlas", "alligator", "artichoke", "accordion", "arrow", "anvil", "aerosol", "antenna", "aquarium",
+      "arch", "arcade", "armchair", "ashtray", "asparagus", "avocado toast", "amber", "almond", "amulet", "adapter",
+      "apron strings", "air fryer", "açai", "acrobat", "alkaline", "alpine", "allspice", "aloe", "anemone", "apple pie",
+      "apron with pocket", "airplane seat", "air balloon", "antelope", "auger", "aquatic plant", "abacus", "adhesive", "argyle", "anise",
+      "accordion file", "air pump", "ambulance helicopter", "animal shelter", "autumn", "apron dress", "art supplies", "audio", "anchor buoy", "athletic shoe",
+      "angiogram", "anorak", "apartment", "airmail", "avalanche", "arugula", "acupressure", "ant farm", "antique", "acoustic",
+      "ammonite", "apricot", "artichoke dip", "arrow sign", "aloe gel", "armadillo", "ab roller", "air purifier", "asphalt", "aqua socks",
+      "apple juice", "air conditioner", "adjustable wrench", "appetizer", "algae", "agate", "alarm system", "archery", "amulet bag", "apron set",
+      "apricot jam", "auto rickshaw", "airbrush", "anklet", "arowana", "asparagus soup", "acrylic paint", "artichoke heart", "arched window", "astronaut helmet"
+    ];
+
+    /*
+      取得圖片容器
+      透明按鈕會被自動加到這個容器裡
+    */
+    const wrapper = document.getElementById("imageWrapper");
+
+    /*
+      圖片是 10 欄 × 10 列
+    */
+    const rows = 10;
+    const cols = 10;
+
+    /* =========================
+       5. 建立透明點擊區
+       ========================= */
+    function createWordButtons() {
+      words.forEach((word, index) => {
+        /*
+          index 會從 0 到 99
+          row 代表第幾列
+          col 代表第幾欄
+        */
+        const row = Math.floor(index / cols);
+        const col = index % cols;
+
+        /*
+          建立一個透明 button
+          這個 button 會蓋在圖片上的英文單字區
+        */
+        const button = document.createElement("button");
+        button.className = "word-button";
+
+        /*
+          title 是滑鼠停留時的小提示
+          aria-label 是給輔助工具使用
+        */
+        button.title = word;
+        button.setAttribute("aria-label", word);
+
+        /*
+          每格寬度是 10%
+          每格高度是 10%
+
+          left:
+          第 1 欄是 0%
+          第 2 欄是 10%
+          第 3 欄是 20%
+          以此類推
+
+          top:
+          每格從 row * 10% 開始
+          英文單字在每格下方，所以加上 7%
+          代表透明點擊區放在每格底部 7% 到 10% 的位置
+        */
+        button.style.left = `${col * 10}%`;
+        button.style.top = `${row * 10 + 7}%`;
+
+        /*
+          點擊透明區後，播放該單字的英文發音
+        */
+        button.addEventListener("click", () => {
+          speakWord(word);
+        });
+
+        /*
+          把透明按鈕加入圖片容器
+        */
+        wrapper.appendChild(button);
+      });
+    }
+
+    /* =========================
+       6. TTS 英文發音功能
+       ========================= */
+    function speakWord(word) {
+      /*
+        檢查瀏覽器是否支援 Web Speech API
+      */
+      if (!("speechSynthesis" in window)) {
+        alert("This browser does not support Text-to-Speech.");
+        return;
+      }
+
+      /*
+        如果上一個單字還在唸，先停止
+        避免聲音重疊
+      */
+      window.speechSynthesis.cancel();
+
+      /*
+        建立 TTS 發音物件
+      */
+      const utterance = new SpeechSynthesisUtterance(word);
+
+      /*
+        設定美式英文發音
+      */
+      utterance.lang = "en-US";
+
+      /*
+        發音速度
+        1 是正常速度
+        0.85 比較慢，適合教學
+      */
+      utterance.rate = 0.85;
+
+      /*
+        音高
+        1 是正常音高
+      */
+      utterance.pitch = 1;
+
+      /*
+        音量
+        1 是最大音量
+      */
+      utterance.volume = 1;
+
+      /*
+        取得瀏覽器可用語音清單
+      */
+      const voices = window.speechSynthesis.getVoices();
+
+      /*
+        優先選擇美式英文語音
+        不同瀏覽器、不同電腦可用的 voice 名稱會不同
+      */
+      const preferredVoice =
+        voices.find(v => v.lang === "en-US" && v.name.includes("Google")) ||
+        voices.find(v => v.lang === "en-US" && v.name.includes("Microsoft")) ||
+        voices.find(v => v.lang === "en-US") ||
+        voices.find(v => v.lang.startsWith("en"));
+
+      /*
+        如果找到合適語音，就使用該語音
+      */
+      if (preferredVoice) {
+        utterance.voice = preferredVoice;
+      }
+
+      /*
+        開始發音
+      */
+      window.speechSynthesis.speak(utterance);
+    }
+
+    /*
+      有些瀏覽器的語音清單會比較晚載入
+      onvoiceschanged 可以在語音載入後重新取得清單
+    */
+    window.speechSynthesis.onvoiceschanged = () => {
+      window.speechSynthesis.getVoices();
+    };
+
+    /*
+      啟動：建立所有透明單字點擊區
+    */
+    createWordButtons();
+  </script>
+</body>
+</html>
