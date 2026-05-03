@@ -6,7 +6,7 @@
   <!-- 讓網頁可以在手機、平板、電腦自動適應畫面寬度 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>A Words TTS Grid</title>
+  <title>A Words MP3 Voice Grid</title>
 
   <style>
     /* =========================
@@ -159,7 +159,7 @@
   <div class="page">
 
     <!-- 頁面上方提示文字，可自行刪除或修改 -->
-    <div class="hint">Click the English word to hear it 🔊</div>
+    <div class="hint">Click the English word to hear the real MP3 voice 🔊</div>
 
     <!--
       圖片容器：
@@ -264,77 +264,122 @@
     }
 
     /* =========================
-       6. TTS 英文發音功能
-       ========================= */
+       6. MP3 真人發音功能
+       =========================
+       發音來源資料夾：
+       https://github.com/JackChung-Taiwan/alphabet/tree/main/a_words_voice_mp3
+
+       GitHub Pages 建議放置方式：
+       a.html
+       a_words_grid.png
+       a_words_voice_mp3/
+         apple.mp3
+         ant.mp3
+         alarm_clock.mp3
+         ...
+    */
+
+    /*
+      若 a_words_voice_mp3 資料夾和 a.html 放在同一層，使用下面這個相對路徑即可。
+      如果你的 a.html 放在其他資料夾，請依照實際位置調整。
+    */
+    const AUDIO_BASE_PATH = "a_words_voice_mp3/";
+
+    /*
+      頁面共用的 audio 元件
+      每次點不同單字時，只更換 src，避免同時產生太多音訊物件。
+    */
+    const wordAudio = new Audio();
+    wordAudio.preload = "auto";
+
+    /*
+      特殊對應表：
+      大部分單字會自動用「小寫 + 空格轉底線」對應 mp3 檔名。
+      例如：
+      alarm clock -> alarm_clock.mp3
+      avocado toast -> avocado_toast.mp3
+
+      açaí / açai 會對應到 acai.mp3。
+    */
+    const audioFileAlias = {
+      "açaí": "acai",
+      "açai": "acai",
+      "acai": "acai"
+    };
+
+    /*
+      將畫面上的文字轉成音檔檔名
+      例如：
+      apple -> apple.mp3
+      air conditioner -> air_conditioner.mp3
+      adjustable wrench -> adjustable_wrench.mp3
+      acrylic paint -> acrylic_paint.mp3
+    */
+    function wordToFileName(word) {
+      const originalKey = String(word).trim().toLowerCase();
+
+      if (audioFileAlias[originalKey]) {
+        return audioFileAlias[originalKey] + ".mp3";
+      }
+
+      return originalKey
+        .normalize("NFD")                    // 將重音符號拆開
+        .replace(/[\u0300-\u036f]/g, "")     // 移除重音符號
+        .replace(/[^a-z0-9]+/g, "_")         // 空格、符號轉成底線
+        .replace(/^_+|_+$/g, "")             // 移除開頭與結尾底線
+        .toLowerCase() + ".mp3";
+    }
+
+    /*
+      播放真人 MP3 發音
+    */
     function speakWord(word) {
-      /*
-        檢查瀏覽器是否支援 Web Speech API
-      */
+      const fileName = wordToFileName(word);
+      const audioPath = AUDIO_BASE_PATH + fileName;
+
+      window.speechSynthesis?.cancel();
+
+      wordAudio.pause();
+      wordAudio.currentTime = 0;
+      wordAudio.src = audioPath;
+
+      wordAudio.play().catch(error => {
+        console.warn("MP3 播放失敗，改用瀏覽器 TTS：", audioPath, error);
+        speakWordByTTS(word);
+      });
+    }
+
+    /*
+      備用方案：
+      若 mp3 檔案不存在、路徑錯誤、或瀏覽器暫時阻擋播放，
+      就自動改用 Web Speech API 發音。
+    */
+    function speakWordByTTS(word) {
       if (!("speechSynthesis" in window)) {
         alert("This browser does not support Text-to-Speech.");
         return;
       }
 
-      /*
-        如果上一個單字還在唸，先停止
-        避免聲音重疊
-      */
       window.speechSynthesis.cancel();
 
-      /*
-        建立 TTS 發音物件
-      */
       const utterance = new SpeechSynthesisUtterance(word);
-
-      /*
-        設定美式英文發音
-      */
       utterance.lang = "en-US";
-
-      /*
-        發音速度
-        1 是正常速度
-        0.85 比較慢，適合教學
-      */
       utterance.rate = 0.85;
-
-      /*
-        音高
-        1 是正常音高
-      */
       utterance.pitch = 1;
-
-      /*
-        音量
-        1 是最大音量
-      */
       utterance.volume = 1;
 
-      /*
-        取得瀏覽器可用語音清單
-      */
       const voices = window.speechSynthesis.getVoices();
 
-      /*
-        優先選擇美式英文語音
-        不同瀏覽器、不同電腦可用的 voice 名稱會不同
-      */
       const preferredVoice =
         voices.find(v => v.lang === "en-US" && v.name.includes("Google")) ||
         voices.find(v => v.lang === "en-US" && v.name.includes("Microsoft")) ||
         voices.find(v => v.lang === "en-US") ||
         voices.find(v => v.lang.startsWith("en"));
 
-      /*
-        如果找到合適語音，就使用該語音
-      */
       if (preferredVoice) {
         utterance.voice = preferredVoice;
       }
 
-      /*
-        開始發音
-      */
       window.speechSynthesis.speak(utterance);
     }
 
